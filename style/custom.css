@@ -1,3 +1,3 @@
-section:nth-of-type(3) #gallery .mix:nth-child(1) .card {
+.conferece-thumb {
     background: url(../demo-thumbs/conference.png) center center/cover !important;
 }
