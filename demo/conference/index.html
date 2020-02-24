@@ -672,6 +672,8 @@ function betaVersion(){
 }
 var ext_trigger_time = true;
 function controlScreenShare(){
+    betaVersion();
+    return;
    //alert(webrtc.getLocalScreen());
     if (webrtc.getLocalScreen()) {
         webrtc.stopScreenShare();
