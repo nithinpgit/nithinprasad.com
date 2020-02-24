@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <title>webrtc</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="description" content="webrtc, a complete solution for meetings and webinars" />
+      <meta name="author" content="Nithin" />
+      <meta name="keywords" content="webrtc recorder" />
+      <link rel="stylesheet" href="css/style.css?t=435345" media="all">
+   </head>
+   <body>
+      <div class="main-container">
+          <div class="top-head">
+            <div class="head-txt">Asynchronous Test</div>
+            <div class="exit-btn">Exit Interview</div>
+          </div>
+          <div class="head-band">
+              <div class="q-count">Question <span id="current-q">0</span>/<span id="total-q">0</span></div>
+          </div>
+          <div class="qustion-video-wrap">
+                <div class="flash-msg">
+                    <div class="loader-wrap">
+                            <img src="images/loader.gif"/>
+                    </div>   
+                    <div class="flash-text">CONNECTING TO SERVER</div>  
+                </div>
+               <div class="question-wrap">
+                   <div class="question"></div>
+                  <!-- <div class="options">Yes</div>
+                   <div class="options">No</div>
+                   <div class="options">may be</div>-->
+                   <div class="record-btn-wrap">
+                        <div id="remaining-time" class="btn">TIME REMAINING : <span id="lap"></span></div>
+                       <div id="record-action-btn" class="btn" onclick="startAnswering()">START RECORDING</div>
+                   </div>
+                  
+               </div>
+               <div class="teaser">RECORDING NOT YET STARTED !!</div>
+               <div id="publisher" class="video-wrap publ-wrap">
+                   
+               </div>
+               <div id="plaback" class="video-wrap">
+                    <video id="plaback-video" class="plaback-video" autoplay controls></video>
+               </div>
+               
+          </div>
+      </div>
+   </body>
+</html>
+<script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/hmac-sha256.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/components/enc-base64-min.js"></script>
+  <script src="https://static.opentok.com/v2/js/opentok.min.js"></script>
+<script>
+    var apiKey = '46285772';
+    var apiSecret = '884597c3cc51e550d6a97fc16bec925316042327';
+    var sampleSessionId = '2_MX40NjI4NTc3Mn5-MTU1Mjk0NTM2MjY3N340aFdMajFMczZsMmVSemQ0cE10WEtkbWp-fg';
+    var sampleToken     = 'T1==cGFydG5lcl9pZD00NjI4NTc3MiZzaWc9MmI1ZjlhYzAyYzA1MDYxYzQ3ZGFkMzMyODIyZDNiYWE3NDg5MjA2YjpzZXNzaW9uX2lkPTJfTVg0ME5qSTROVGMzTW41LU1UVTFNamswTlRNMk1qWTNOMzQwYUZkTWFqRk1jelpzTW1WU2VtUTBjRTEwV0V0a2JXcC1mZyZjcmVhdGVfdGltZT0xNTUyOTQ1MzgzJm5vbmNlPTAuNDQ4MDU2ODYyNzM2MjIxOCZyb2xlPXB1Ymxpc2hlciZleHBpcmVfdGltZT0xNTU1NTM3MzgxJmluaXRpYWxfbGF5b3V0X2NsYXNzX2xpc3Q9';
+    var sessionId  = sampleSessionId;
+    var token      = sampleToken;
+    var session = null;
+    var publisher = null;
+    var questionCount = 0;
+    var ended = false;
+    var currentCount = 0;
+    var archiveId;
+    var playbackMode = false;
+    var bucketUrl = 'https://s3.amazonaws.com/iaiply/46285772/';
+    var questions = [
+        {
+          question:"can you do a self entroduction ?",
+          count:60
+        },
+        {
+          question:"Tell us about your previous work experience ?",
+          count:120
+        },
+        {
+          question:"Tell us about your goals in next one year ?",
+          count:180
+        }
+    ]
+    $(document).ready(function(){
+        loadQuestion();
+        initSession();
+        startCounter();
+    });
+    function loadQuestion(){
+     
+        if(questions.length > questionCount){
+            var qobj = questions[questionCount];
+            $('.question').html(qobj['question']);
+            $('.question').show();
+            if(playbackMode){
+                if(qobj.hasOwnProperty('archiveId')){
+                    archiveId = qobj['archiveId'];
+                    document.getElementById('plaback-video').src = bucketUrl+archiveId+'/archive.mp4';
+                    setTimeout(function(){
+                        document.getElementById('plaback-video').play();
+                    },1000);
+                }
+            }
+        }
+        if(questions.length == (questionCount +1)){
+            ended = true;
+        }
+        $('#current-q').html(questionCount+1);
+        $('#total-q').html(questions.length);
+    }
+    function startCounter(){
+
+        currentCount--;
+        $('#lap').html(toHHMMSS(currentCount))
+        setTimeout(startCounter,1000);
+        if(currentCount <= 0 ){
+            if($('#record-action-btn').html() == 'NEXT QUESTION'){
+                $('#record-action-btn').trigger('click')
+            }
+        }
+    }
+    var toHHMMSS = (secs) => {
+        var sec_num = parseInt(secs, 10)    
+        var hours   = Math.floor(sec_num / 3600) % 24
+        var minutes = Math.floor(sec_num / 60) % 60
+        var seconds = sec_num % 60    
+        return [hours,minutes,seconds]
+            .map(v => v < 10 ? "0" + v : v)
+            .filter((v,i) => v !== "00" || i > 0)
+            .join(":")
+    }
+    function initSession(){
+        if (!publisher) {
+            session = OT.initSession(apiKey, sessionId);
+            var pubDiv = document.createElement('div');
+            pubDiv.id  = 'publisherdiv';
+            document.getElementById('publisher').appendChild(pubDiv)
+            publisher = OT.initPublisher('publisherdiv', {
+                insertMode: 'append',
+                width: '100%',
+                height: '100%'
+            }, initDeviceHandler);
+       } 
+    }
+    function initDeviceHandler(error){
+        if(error){
+            if(error.message.indexOf('OT.Publisher Access Denied') > -1 ){
+                $('.flash-text').html('Please allow camera and microphone to start interview');
+                $('.flash-msg').show();
+            }
+        }else{
+            session.connect(token, function(error) {
+                // If the connection is successful, publish to the session
+                if (error) {
+                    handleError(error);
+                } else {
+                    $('.flash-msg').hide();
+                }
+            });
+        }
+    }
+    function startAnswering(){
+        $('#record-action-btn').removeClass('red')
+        if($('#record-action-btn').html() == 'START RECORDING'){
+                $('#remaining-time').show();
+                currentCount = questions[questionCount]['count'];
+                $('.flash-text').html('RECORDING WILL START IN A MOMENT')
+                $('.flash-msg').show();
+
+                session.publish(publisher, function(error){
+                if(error){
+                    $('.flash-text').html(error.message);
+                    $('.flash-msg').show();
+                }else{
+                    $('#record-action-btn').html('NEXT QUESTION');
+                    $('.teaser').html('RECORDING IS ON PROGRESS..');
+                    $('.teaser').addClass('red');
+                    $('#record-action-btn').addClass('red');
+                    startRecording();
+                    //$('.flash-msg').hide();
+
+                }
+            });
+        }else if($('#record-action-btn').html() == 'STOP RECORDING'){
+           
+        }else if($('#record-action-btn').html() == 'NEXT QUESTION'){
+            $('#remaining-time').hide();
+            $('.flash-text').html('INITIALISING NEXT QUESTION');
+            $('.flash-msg').show();
+            setTimeout(stopRecording,1000);
+        }else if('ENDED - REPLAY INTERVIEW'){
+            startPlayback();
+        }
+}
+
+function startRecording(){
+      var jwtoken = getJwtToken();
+      //var url  = 'https://api.opentok.com/v2/project/'+apiKey+'/archive';
+      var param = {};
+      param.sessionId = sessionId;
+      param.token     = jwtoken;
+      $.ajax({
+            url: 'php-services/service.php?type=start-record',
+            data: JSON.stringify(param),
+            method: "POST",
+            contentType: "application/json",
+            crossDomain: true,
+            async: false,
+            success: function (res) {
+                console.log(res)
+                archiveId = JSON.parse(res).id;
+                $('.flash-msg').hide();
+                addArichiveId();
+            }
+        });
+}
+function addArichiveId(){
+    //alert(archiveId)
+    var q           = questions[questionCount];
+        q.archiveId = archiveId;
+    var tempArray   = [];
+    for(var i=0;i<questions.length;i++){
+         if(i != questionCount){
+             tempArray.push(questions[i]);
+         }else{
+             tempArray.push(q);
+         }
+    }
+    questions = tempArray;
+}
+function stopRecording(){
+    
+      var jwtoken = getJwtToken();
+      //var url  = 'https://api.opentok.com/v2/project/'+apiKey+'/archive';
+      var param = {};
+      param.sessionId = sessionId;
+      param.token     = jwtoken;
+      param.archiveId = archiveId;
+      $.ajax({
+            url: 'php-services/service.php?type=stop-record',
+            data: JSON.stringify(param),
+            method: "POST",
+            contentType: "application/json",
+            crossDomain: true,
+            async: false,
+            success: function (res) {
+                console.log(res)
+                $('.flash-msg').hide();
+                //session.unpublish(publisher);
+                //publisher = null;
+                if(ended){
+                    $('#record-action-btn').html('ENDED - REPLAY INTERVIEW');
+                    $('.teaser').html('INTERVIEW ENDED');
+                    $('.teaser').addClass('red');
+                    $('.question').hide();
+                }else{
+                    //$('.teaser').html('RECORDING NOT STARTED FOR THIS QUESTION !');
+                    //$('.teaser').removeClass('red');
+
+                    questionCount++;
+                    loadQuestion();
+                    $('#remaining-time').show();
+                    currentCount = questions[questionCount]['count'];
+                    startRecording();
+                    /*
+                    var pubDiv = document.createElement('div');
+                    pubDiv.id  = 'publisherdiv';
+                    $('#publisher').html('');
+                    document.getElementById('publisher').appendChild(pubDiv)
+                    publisher = OT.initPublisher('publisherdiv', {
+                        insertMode: 'append',
+                        width: '100%',
+                        height: '100%'
+                    }, function(error){
+                        if(error){
+
+                        }else{
+                            $('#record-action-btn').html('START RECORDING');
+                        }
+                    });
+                    */
+                }
+            }
+        });
+}
+
+function getJwtToken(){
+        var jwtHeader = '';
+        var jwtData = '';
+        var jwtSignature = '';
+        var jwtToken = '';
+        var header = {
+        "alg": "HS256",
+        "typ": "JWT"
+        };
+        var currentTime = parseInt(new Date().getTime() / 1000);
+        var expireTime  = currentTime + 10000;
+        console.log(currentTime)
+        var data = {"iss": apiKey,
+        "iat": currentTime,
+        "exp": expireTime,
+        "ist": "project",
+        "jti": 'sdfsdfsdf5345'};
+        var secret = apiSecret;
+        var stringifiedHeader = CryptoJS.enc.Utf8.parse(JSON.stringify(header));
+        var encodedHeader = base64url(stringifiedHeader);
+        jwtHeader = encodedHeader;
+        var stringifiedData = CryptoJS.enc.Utf8.parse(JSON.stringify(data));
+        var encodedData = base64url(stringifiedData);
+        jwtData = encodedData;
+        var signature = encodedHeader + "." + encodedData;
+        signature = CryptoJS.HmacSHA256(signature, secret);
+        signature = base64url(signature);
+        jwtSignature = signature;
+        jwtToken = jwtHeader+'.'+jwtData+'.'+jwtSignature;
+        return jwtToken;
+}
+function base64url(source) {
+        encodedSource = CryptoJS.enc.Base64.stringify(source);
+        encodedSource = encodedSource.replace(/=+$/, '');
+        encodedSource = encodedSource.replace(/\+/g, '-');
+        encodedSource = encodedSource.replace(/\//g, '_');
+        return encodedSource;
+}
+/*
+* Playback section 
+*/
+function startPlayback(){
+    $('.teaser').html('INTERVIEW PLAYBACK');
+    $('#record-action-btn').html('INTERVIEW PLAYBACK');
+    $('.teaser').removeClass('red');
+    $('.publ-wrap').hide();
+    $('#plaback').show();
+    playbackMode = true;
+    questionCount = 0;
+    loadQuestion();
+    var vid = document.getElementById("plaback-video");
+    vid.onended = function(){
+        if(Math.abs(vid.currentTime - vid.duration) < 1){
+            questionCount++;
+            loadQuestion();
+        }
+    }
+    session.unpublish(publisher);
+    publisher = null;
+}
+</script>
