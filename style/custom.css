@@ -1,3 +1,13 @@
 .conferece-thumb {
     background: url(../demo-thumbs/conference.png) center center/cover !important;
 }
+.recorder-thumb {
+    background: url(../demo-thumbs/recorder.png) center center/cover !important;
+}
+.thumb-card{
+       /* border: 1px solid #ffffff; 
+       -moz-box-shadow: inset 0 0 10px #d0cece;
+       -webkit-box-shadow: inset 0 0 10px #d0cece;
+       box-shadow: inset 0 0 10px #d0cece;
+       */
+}
