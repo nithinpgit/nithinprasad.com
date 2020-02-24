@@ -1,0 +1,281 @@
+<?php
+Class Employee_model extends CI_Model
+{
+    function __construct()
+    {
+        parent::__construct();
+    }
+	
+	// function to display employeee details
+	function employees($param=array())
+    {
+		$limit 			= isset($param['limit'])?$param['limit']:0;
+		$offset 		= isset($param['offset'])?$param['offset']:0;
+		$order_by 		= isset($param['order_by'])?$param['order_by']:'id';
+		$direction 		= isset($param['direction'])?$param['direction']:'DESC';
+		$status 		= isset($param['status'])?$param['status']:0;
+		
+		$this->db->select('employee.*, designations.designation_name, employee_unit.unit_name, office.office_name');
+		$this->db->from('employee');
+		$this->db->order_by($order_by, $direction);
+        if($limit>0)
+        {
+            $this->db->limit($limit, $offset);
+        }
+        if( $status )
+        {
+            $this->db->where('status', 1); 
+        }
+		$this->db->join('designations', 'designations.id = employee.designation_id', 'left');
+		$this->db->join('employee_unit', 'employee_unit.id = employee.unit_id', 'left');
+		$this->db->join('office', 'office.id = employee.office_id', 'left');
+        $result = $this->db->get();
+        return $result->result_array();
+
+	}
+	
+	// function to get employee
+	function employee($param=array())
+    {
+		if( isset($param['status'])) 
+		{
+			$this->db->where('status', 1);
+		}
+		if( isset($param['id'])) 
+		{
+			$this->db->where('id', $param['id']);
+		}
+		return $this->db->get('employee')->row_array();	
+	}
+	
+	// function to get employee history
+	function employee_history($param=array())
+    {
+		$this->db->select('employee_history.*, employee_unit.unit_name');
+		if( isset($param['status'])) 
+		{
+			$this->db->where('status', 1);
+		}
+		if( isset($param['employee_id'])) 
+		{
+			$this->db->where('employee_id', $param['employee_id']);
+		}
+		$this->db->join('employee_unit', 'employee_unit.id = employee_history.unit_id', 'left');
+		return $this->db->get('employee_history')->result_array();	
+	}
+	
+	// function to get employee history
+	function get_history($param=array())
+    {
+		if( isset($param['status'])) 
+		{
+			$this->db->where('status', 1);
+		}
+		if( isset($param['id'])) 
+		{
+			$this->db->where('id', $param['id']);
+		}
+		return $this->db->get('employee_history')->row_array();	
+	}
+	
+	// function to get employee type
+	function employee_type()
+    {
+		if( isset($param['status'])) 
+		{
+			//$this->db->where('status', 1);
+		}
+		if( isset($param['id'])) 
+		{
+			//$this->db->where('id', $param['id']);
+		}
+		$result = $this->db->get('employee_type');
+		return $result->result_array(); 
+	
+	}
+	
+	function save($data){
+		if($data['id'])
+		{
+			$this->db->where('id', $data['id']);
+			$this->db->update('employee', $data);
+			return $data['id'];
+		}
+		else
+		{
+			$this->db->insert('employee', $data);
+			return $this->db->insert_id();
+		}
+	}	
+	function delete($id)
+	{
+		$this->db->where('id', $id);		
+		$this->db->delete('employee');
+	}
+	
+	function get_designation($param=array())
+    {
+		if( isset($param['status'])) 
+		{
+			$this->db->where('status', 1);
+		}
+		if( isset($param['id'])) 
+		{
+			$this->db->where('id', $param['id']);
+		}
+		return $this->db->get('designations')->row_array();	
+	}
+	
+	/*function get_designation($id)
+	{ 
+		$this->db->select('designation_name,id');
+		$this->db->from('designations');
+		$this->db->where( 'seniority > ', $id);
+		$this->db->where('status', 1);
+		$result = $this->db->get();	
+		return $result->result_array();
+		//$query =  $this->db->last_query();
+		//echo $query;
+	}*/
+	
+	function get_supervisory_officers($param=array())
+	{		
+		$designations		= array();
+		$employees			= array();
+		$designation		= $this->get_designation($param);
+	//	echo '<pre>'; print_r($designation);die;
+		if( $designation )
+		{
+			$this->db->where(array( 'status'=>1, 'seniority<' => $designation['seniority'], 'id !=' => $designation['id'] ));
+			$designations = $this->db->get('designations')->result_array();	
+			//echo $this->db->last_query();die;
+			//echo '<pre>'; print_r($designations);die;
+			if( !empty($designations))
+			{
+				foreach( $designations as $desig)	
+				{
+					$this->db->select('id, name');
+					$this->db->where('designation_id', $desig['id']);
+					$supervisory_emp = $this->db->get('employee')->result_array();	
+					//echo $this->db->last_query();die;
+					if( !empty($supervisory_emp))
+					{
+						foreach( $supervisory_emp as $sup_emp)	
+						{
+							$employees[] = $sup_emp;
+						}
+					}
+				}
+			}
+		}
+		//echo '<pre>'; print_r($employees);die;
+		return $employees;
+	}
+	
+	function save_history($data)
+	{
+		if($data['id'])
+		{
+			$this->db->where('id', $data['id']);
+			$this->db->update('employee_history', $data);
+			return $data['id'];
+		}
+		else
+		{
+			$this->db->insert('employee_history', $data);
+			return $this->db->insert_id();
+		}
+	}
+	
+	function delete_history($id)
+	{
+		$this->db->where('id', $id);		
+		$deleted = $this->db->delete('employee_history');
+		return ($deleted)?true:false;
+	}
+	
+	function change_status($id){
+		$employee 	= $this->employee(array('id'=>$id));
+		$status 	= ($employee['status'] > 0)?0:1;
+		$this->db->set('status', $status);
+		$this->db->where('id', $id);		
+		$this->db->update('employee');
+		return $status;
+	}
+	
+	function get_overdue_report()
+	{ 
+		$current_date = date('Y-m-d 00:00:00');
+		$this->db->select('employee.name,employee.join_date, employee.gender, employee.pen_no, employee.acr_date, employee.acr_received, employee.mobile_no, employee.email, employee.communication_address, designations.designation_name, employee_unit.unit_name, office.office_name');
+		$this->db->from('employee');
+		$this->db->join('designations', 'designations.id = employee.designation_id', 'left');
+		$this->db->join('employee_unit', 'employee_unit.id = employee.unit_id', 'left');
+		$this->db->join('office', 'office.id = employee.office_id', 'left');
+		
+		$this->db->where( 'employee.acr_received = ', 0);
+		$this->db->where('employee.status', 1);
+		$this->db->where('employee.acr_date <', $current_date); 
+		$result = $this->db->get();	
+		//$query =  $this->db->last_query();
+		//echo $query;
+		return $result->result_array();
+		
+	}
+	function emp_record($eid)
+	{
+		$this->db->select('employee.name,employee.join_date, employee.dob, employee.gender, employee.pen_no, employee.acr_date, employee.acr_received, employee.mobile_no, employee.email, employee.office_phone, employee.communication_address, designations.designation_name, employee_unit.unit_name, office.office_name');
+		$this->db->from('employee');
+		$this->db->join('designations', 'designations.id = employee.designation_id', 'left');
+		$this->db->join('employee_unit', 'employee_unit.id = employee.unit_id', 'left');
+		$this->db->join('office', 'office.id = employee.office_id', 'left');
+		$this->db->where('employee.status', 1);
+		$this->db->where('employee.id', $eid);
+		$result = $this->db->get();	
+		//$query =  $this->db->last_query();
+		//echo $query; die;
+		return $result->result_array();
+	}
+	
+	function get_emp_history($eid)
+	{ 
+		$this->db->select('employee.name, employee_unit.unit_name, employee_history.designation, employee_history.office, employee_history.job_period_from, employee_history.job_period_to');
+		$this->db->from('employee_history');
+		$this->db->join('employee_unit', 'employee_unit.id = employee_history.unit_id', 'left');
+		$this->db->join('employee', 'employee.id  		   = employee_history.employee_id', 'left');
+		$this->db->where('employee_history.status', 1);
+		$this->db->where('employee_history.id', $eid);
+		$result = $this->db->get();	
+		//$query =  $this->db->last_query(); 
+		//echo $query; die; 
+		return $result->result_array();
+	}
+	//employee report
+	
+	function emp_record_report()
+	{
+		$this->db->select('employee.name,employee.join_date, employee.dob, employee.gender, employee.pen_no, employee.acr_date, employee.acr_received, employee.mobile_no, employee.email, employee.office_phone, employee.communication_address, designations.designation_name, employee_unit.unit_name, office.office_name');
+		$this->db->from('employee');
+		$this->db->join('designations', 'designations.id = employee.designation_id', 'left');
+		$this->db->join('employee_unit', 'employee_unit.id = employee.unit_id', 'left');
+		$this->db->join('office', 'office.id = employee.office_id', 'left');
+		$this->db->where('employee.status', 1);
+		$result = $this->db->get();	
+		//$query =  $this->db->last_query();
+		//echo $query; die;
+		return $result->result_array();
+	}
+	
+	function get_emp_history_report()
+	{ 
+		$this->db->select('employee.name, employee_unit.unit_name, employee_history.designation, employee_history.office, employee_history.job_period_from, employee_history.job_period_to');
+		$this->db->from('employee_history');
+		$this->db->join('employee_unit', 'employee_unit.id = employee_history.unit_id', 'left');
+		$this->db->join('employee', 'employee.id  		   = employee_history.employee_id', 'left');
+		$this->db->where('employee_history.status', 1);
+		$result = $this->db->get();	
+		//$query =  $this->db->last_query(); 
+		//echo $query; die; 
+		return $result->result_array();
+	}
+}
+?>
