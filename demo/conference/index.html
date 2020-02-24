@@ -54,7 +54,7 @@
             </span>
             <span class="webcam-right">
             <ul class="webcam-active-menu hide-menu">
-                <li class="webcam-add-user webcam-tooltip">
+                <li class="webcam-add-user webcam-tooltip" onclick="inviteClick()">
                     <a href="javascript:void(0);"><img src="assets/img/camera-tools/add-user.svg" width="20"></a>
                     <span class="webcam-tooltiptext">Invite User</span>
                 </li>
@@ -659,6 +659,17 @@ function checkChromeExt(callbck){
    }
    //return callbck(chrome_ext_avail);
    return callbck(false);
+}
+
+function inviteClick(){
+    alertify.set({ labels: {ok: "Ok",cancel: "Cancel" } });
+    alertify.confirm("Copy and share this url https://nithinprasad.com/demo/conference to the peoples who want to join this meeting, Please share the meeting ID also - Meeting ID : "+room_name, function (e) {
+        if (e) {
+           
+        } else {
+        //alertify.error("You've clicked Cancel");
+        }
+    });
 }
 function betaVersion(){
     alertify.set({ labels: {ok: "Ok",cancel: "Cancel" } });
