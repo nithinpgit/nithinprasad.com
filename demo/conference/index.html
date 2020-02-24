@@ -660,6 +660,16 @@ function checkChromeExt(callbck){
    //return callbck(chrome_ext_avail);
    return callbck(false);
 }
+function betaVersion(){
+    alertify.set({ labels: {cancel: "Cancel" } });
+    alertify.confirm("This feature is no available at this moment because this is a demo app. For more information please contact +919809888818 or skype - nithinj2e", function (e) {
+        if (e) {
+            installPlugin();
+        } else {
+        //alertify.error("You've clicked Cancel");
+        }
+    });
+}
 var ext_trigger_time = true;
 function controlScreenShare(){
    //alert(webrtc.getLocalScreen());
