@@ -658,8 +658,20 @@ function checkChromeExt(callbck){
    //return callbck(chrome_ext_avail);
    return callbck(false);
 }
+function betaVersion(){
+    alertify.set({ labels: { cancel: "Cancel" } });
+    alertify.confirm("This is a demo version. This feature is not available at this point, please contact +919809888818 or skype : nithinj2e for more info", function (e) {
+        if (e) {
+            //installPlugin();
+        } else {
+        //alertify.error("You've clicked Cancel");
+        }
+    });
+}
 var ext_trigger_time = true;
 function controlScreenShare(){
+    betaVersion();
+    return;
    //alert(webrtc.getLocalScreen());
     if (webrtc.getLocalScreen()) {
         webrtc.stopScreenShare();
@@ -679,7 +691,7 @@ function controlScreenShare(){
                                 alertify.set({ labels: { ok: "Install Plugin", cancel: "Cancel" } });
                                 alertify.confirm("Screen share extension is not installed on your machine. Please install the extension and reload the application.", function (e) {
                                   if (e) {
-                                     installPlugin();
+                                     //installPlugin();
                                   } else {
                                     //alertify.error("You've clicked Cancel");
                                   }
