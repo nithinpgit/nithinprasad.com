@@ -14514,7 +14514,7 @@ arguments[4][38][0].apply(exports,arguments)
 			return continuationByte & 0x3F;
 		}
 
-		// If we end up here, it’s not a continuation byte
+		// If we end up here, itï¿½s not a continuation byte
 		throw Error('Invalid continuation byte');
 	}
 
@@ -18404,23 +18404,7 @@ function WebRTC(opts) {
             debug: false,
             // makes the entire PC config overridable
             peerConnectionConfig: {
-                        iceServers: [
-							{
-                                'urls': 'stun:stun.l.google.com:19302'
-                            }, 
-							{
-                                "urls": "turn:turn.citrixonline.com:5060",
-                                "username": "citrixturnuser",
-                                "credential": "turnpassword"
-
-                            },
-                            {
-                                "urls": "turn:turn.citrixonline.com:443?transport=tcp",
-								"username": "citrixturnuser",
-                                "credential": "turnpassword"
-
-                            }
-                        ]
+              iceServers: [{urls:["stun:turn.goto-rtc.com:5060"],username:"citrixturnuser",credential:"turnpassword"},{urls:["turn:turn.goto-rtc.com:5060?transport=udp","turn:turn.goto-rtc.com:443?transport=tcp","turn:turn.goto-rtc.com:5060?transport=tcp"],username:"citrixturnuser",credential:"turnpassword"}]
 						//iceServers: []
                     },
                     peerConnectionConstraints: {
