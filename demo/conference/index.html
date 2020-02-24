@@ -13,14 +13,14 @@
         <link rel="stylesheet" href="assets/css/alertify.default.css" id="toggleCSS" />
         <link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/ncgpiojdencehcbfemhkjabhceoikhik">
     </head>
-    <body>
+    <body style="background:#3a87ad !important">
     <!--  room name -->
     <div class="content-wrapper">
         <div class="invite-container" style="display: none;">
-            <h3 id="enter_room_id">Initiate a Meeting and invite up to six people</h3>
+            <h3 id="enter_room_id">Enter name and meeting ID , then start <br/>Share the same url for inviting others to meeting</h3>
             <div>
-                <input id="name_input" type="text" class="text-box name_inp" placeholder="Please enter your name" onfocus="this.placeholder=''" onblur="this.placeholder = 'Please enter your name'">
-                <input id="room_input" type="text" class="text-box" placeholder="Please enter meeting name" onfocus="this.placeholder=''" onblur="this.placeholder = 'Please enter meeting name'">
+                <input id="name_input" type="text" class="text-box name_inp" placeholder="Your Name" onfocus="this.placeholder=''" onblur="this.placeholder = 'Your Name'">
+                <input id="room_input" type="text" class="text-box" placeholder="Meeting ID" onfocus="this.placeholder=''" onblur="this.placeholder = 'Meeting ID'">
                 <button id="enter-butn" class="actn-btn">Start</button>
             </div>
         </div>
@@ -198,11 +198,11 @@ function domClick(){
         name      = $('#name_input').val();
         var room_error = '';
         if(room_name.replace(/\s/g, '') == '' && name.replace(/\s/g, '') == ''){
-           room_error = 'room name and user name required';
+           room_error = 'Meeting ID and Name of the user required';
         }else if(room_name.replace(/\s/g, '') == ''){
-           room_error = 'room name required';
+           room_error = 'Meeting ID required';
         }else if(name.replace(/\s/g, '') == ''){
-           room_error = 'user name required';
+           room_error = 'Name of the user required';
         }
 
         if(room_error == ''){
