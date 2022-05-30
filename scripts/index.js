@@ -126,6 +126,7 @@ $(function() {
   });
 
   function posFilterBar(elem) {
+    try{
     var origin = $(elem)
       .parent()
       .offset().left;
@@ -135,6 +136,9 @@ $(function() {
       width: $(elem).innerWidth()
     });
     $('.float-bar .row').css('left', (pos - origin) * -1);
+  }catch(e){
+    
+  }
   }
 
   // GALLERY
